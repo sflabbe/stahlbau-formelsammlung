@@ -1,0 +1,1043 @@
+% !TeX program = lualatex
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\else
+  \usepackage{fontspec}
+  \setmainfont{lmroman10-regular.otf}[
+    BoldFont=lmroman10-bold.otf,
+    ItalicFont=lmroman10-italic.otf,
+    BoldItalicFont=lmroman10-bolditalic.otf]
+  \setsansfont{lmsans10-regular.otf}[
+    BoldFont=lmsans10-bold.otf,
+    ItalicFont=lmsans10-oblique.otf,
+    BoldItalicFont=lmsans10-boldoblique.otf]
+  \setmonofont{lmmono10-regular.otf}[
+    ItalicFont=lmmono10-italic.otf]
+\fi
+\usepackage[ngerman]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\geometry{left=18mm,right=18mm,top=20mm,bottom=23mm}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{siunitx}
+\sisetup{locale=DE,per-mode=symbol,detect-all=true}
+\usepackage{booktabs,longtable,tabularx,array,multirow,makecell}
+\usepackage{xcolor}
+\definecolor{primaryblue}{HTML}{1F4E79}
+\definecolor{neutralgray}{HTML}{F2F4F7}
+\definecolor{infogreen}{HTML}{D9EAD3}
+\definecolor{noteyellow}{HTML}{FFF2CC}
+\definecolor{warnred}{HTML}{F4CCCC}
+\definecolor{darkgray}{HTML}{333333}
+\usepackage[most]{tcolorbox}
+\tcbset{colback=neutralgray,colframe=primaryblue,arc=2mm,boxrule=0.5pt,left=1.5mm,right=1.5mm,top=1mm,bottom=1mm}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=5mm}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=primaryblue,urlcolor=primaryblue,citecolor=primaryblue,pdftitle={Bemessung geschraubter Verbindungen - Stahl und Aluminium},pdfauthor={Stahlbau-Formelsammlung}}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Stahlbau-Formelsammlung -- Schraubenverbindungen}
+\rhead{Deutschland: EC3/EC9 + NA-DE}
+\cfoot{\thepage}
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\sffamily\color{primaryblue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\sffamily\color{darkgray}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\sffamily\color{darkgray}}{\thesubsubsection}{0.6em}{}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,fit,decorations.pathreplacing,patterns,backgrounds}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{float}
+\usepackage{pdflscape}
+\usepackage{lastpage}
+
+\newcommand{\ECthree}{DIN EN 1993-1-8:2010-12 + NA-DE}
+\newcommand{\ECnine}{DIN EN 1999-1-1:2014-03 + NA-DE}
+\newcommand{\gamMtwo}{\gamma_{M2}}
+\newcommand{\gamMthree}{\gamma_{M3}}
+\newcommand{\fub}{f_{ub}}
+\newcommand{\fup}{f_u}
+\newcommand{\fyb}{f_{yb}}
+\newcommand{\fzero}{f_{0,2}}
+\newcommand{\todo}[1]{\textcolor{red}{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+
+\newtcolorbox{hinweisbox}[1][]{colback=noteyellow,colframe=orange!80!black,title=Hinweis,#1}
+\newtcolorbox{mindestbox}[1][]{colback=infogreen,colframe=green!50!black,title=Erforderliche Mindestangaben,#1}
+\newtcolorbox{warnbox}[1][]{colback=warnred,colframe=red!70!black,title=Achtung,#1}
+\newtcolorbox{normbox}[1][]{colback=white,colframe=primaryblue,title=Normativer Status,#1}
+
+
+% --- TikZ helper macros for bolted connections ---------------------------------
+% Simplified side-view symbols: HV/HR washers are drawn wider than the hex head/nut
+% to avoid the false impression of a small washer. The hexagonal head/nut is shown
+% with chamfered outline and facet lines, not as a plain rectangle.
+\newcommand{\drawWasher}[4]{%
+  \pgfmathsetmacro{\wxl}{#1-#3/2}%
+  \pgfmathsetmacro{\wxr}{#1+#3/2}%
+  \pgfmathsetmacro{\wyt}{#2+#4}%
+  \path[fill=gray!45,draw=black,thick] (\wxl,#2) rectangle (\wxr,\wyt);%
+}
+\newcommand{\drawHexFastener}[4]{%
+  \pgfmathsetmacro{\hxl}{#1-#3/2}%
+  \pgfmathsetmacro{\hxr}{#1+#3/2}%
+  \pgfmathsetmacro{\hyt}{#2+#4}%
+  \pgfmathsetmacro{\bev}{#4*0.22}%
+  \pgfmathsetmacro{\fl}{\hxl+0.22*#3}%
+  \pgfmathsetmacro{\fr}{\hxr-0.22*#3}%
+  % Side-view convention for a hex head/nut, based on standard bolt drawings:
+  % dominant rectangular body, small chamfered end faces, and facet lines.
+  % This avoids a misleading diamond symbol while still reading as Sechskant.
+  \path[fill=gray!70,draw=black,thick]
+    (\hxl+\bev,#2) -- (\hxr-\bev,#2) --
+    (\hxr,#2+0.20*#4) -- (\hxr,#2+0.80*#4) --
+    (\hxr-\bev,\hyt) -- (\hxl+\bev,\hyt) --
+    (\hxl,#2+0.80*#4) -- (\hxl,#2+0.20*#4) -- cycle;%
+  % Facet projection lines, like in technical side views of hex bolts.
+  \draw[black,thick] (\fl,#2+0.04*#4) -- (\fl,\hyt-0.04*#4);%
+  \draw[black,thick] (\fr,#2+0.04*#4) -- (\fr,\hyt-0.04*#4);%
+  \draw[black!45,thin] (\hxl+\bev,#2+0.04*#4) -- (\fl,#2+0.04*#4);%
+  \draw[black!45,thin] (\fr,#2+0.04*#4) -- (\hxr-\bev,#2+0.04*#4);%
+}
+\newcommand{\drawShaft}[4]{%
+  \pgfmathsetmacro{\sxl}{#1-#4/2}%
+  \pgfmathsetmacro{\sxr}{#1+#4/2}%
+  \path[fill=gray!55,draw=black,thick] (\sxl,#2) rectangle (\sxr,#3);%
+}
+
+\title{\sffamily\bfseries\color{primaryblue}Stahlbau-Formelsammlung\\[2mm]
+\large Modul Anschlüsse: geschraubte Verbindungen\\[1mm]
+\normalsize Stahl und Aluminium -- Deutschland, EC3/EC9 mit NA-DE}
+\author{Stahlbau-Formelsammlung}
+\date{Version 0.1.0 -- Mai 2026, öffentliche Ausgabe}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{normbox}
+Diese Formelsammlung ist ein öffentliches Rechen- und Dokumentationsschema. Maßgebend bleibt immer die vertraglich festgelegte Normenbasis, die Projektstatik, die Ausführungsunterlagen, die Zulassung/ETA des konkreten Produkts sowie die Angaben des Herstellers. Produktnormen liefern Eigenschaften der Verbindungsmittel; sie ersetzen keinen Tragfähigkeitsnachweis.
+\end{normbox}
+
+\tableofcontents
+\newpage
+
+\section{Zweck, Grenzen und Normenbasis}
+
+\subsection{Ziel des Dokuments}
+Dieses Dokument stellt einen Vorschlag für einen einheitlichen Bemessungsablauf für geschraubte Verbindungen aus Stahl und Aluminium im deutschen Kontext dar. Der Schwerpunkt liegt auf Durchsteckverbindungen mit Mutter, vorgespannten HV/HR-Verbindungen, Sackloch-/Innengewindeverbindungen und dem Sonderfall kleiner Schrauben unter M12.
+
+\begin{hinweisbox}
+Es gibt keine allgemeine normative Tabelle
+\[
+\text{Schraubendurchmesser} \rightarrow \text{Mindestblechdicke eines Einzelblechs}
+\]
+für Durchsteckverbindungen mit Mutter. Die erforderliche Blechdicke ergibt sich aus Lochleibung, Durchstanzen, Nettoquerschnitt, Blockversagen, Hebelkräften/lokaler Biegung und ggf. Gleitwiderstand.
+
+Hebelkräfte infolge lokaler Blechbiegung werden in dieser Formelsammlung nicht als eigener Nachweis entwickelt. Bei zugbeanspruchten Anschlussplatten, T-Stummeln oder dünnen Kopfplatten ist ein gesonderter Anschlussnachweis nach der maßgebenden EC3-Anschlusslogik bzw. nach Produkt-/Zulassungsunterlagen erforderlich.
+\end{hinweisbox}
+
+\begin{warnbox}
+Diese Formelsammlung behandelt vorwiegend ruhende Beanspruchungen und die Widerstandsseite einzelner Verbindungsnachweise. Ermüdung, Schwingungen, zyklische Beanspruchung, Montagezustände und Verformungs-/Gebrauchstauglichkeitsfragen sind nicht abgedeckt und projektbezogen gesondert zu prüfen.
+\end{warnbox}
+
+\subsection{Bemessungsnormen und Produktnormen}
+\begin{table}[H]
+\centering
+\caption{Bemessungs- und Produktnormen als Grundlage dieser Formelsammlung}
+\begin{tabularx}{\textwidth}{@{}p{42mm}Y@{}}
+\toprule
+\textbf{Dokument} & \textbf{Rolle im Nachweis} \\
+\midrule
+\ECthree & Bemessung Stahlverbindungen, Standardbasis dieser Formelsammlung. \\
+DIN EN 1993-1-3:2010-12, Abschnitt 8 & Nur für dünnwandige kaltgeformte Stahlbauteile bzw. Sonderfälle unter M12; dort können abweichende Grenzabstände und Lochleibungsregeln maßgebend werden. \\
+\ECnine & Bemessung Aluminiumtragwerke und Aluminiumverbindungen. \\
+EN 1090-2:2018 & Ausführung Stahl. \\
+EN 1090-3:2019 & Ausführung Aluminium. \\
+DASt-Richtlinie 024:2018 & Anziehen geschraubter Verbindungen M12--M36, insbesondere HV FK 10.9. \\
+DASt-Richtlinie 024:2024 & Anziehen geschraubter Verbindungen M8--M39; bei nicht vorgespannten M8/M10 nur als Ausführungs-/Anzugsregel, nicht als Ansatz einer planmäßigen Vorspannung und nicht als Ersatz für den EC3-Tragfähigkeitsnachweis. \\
+EN 14399-1 bis -10 & Produktnormen für HV/HR/HRC-Garnituren. \\
+EN 15048-1/-2 & Produktnormen für nicht vorgespannte Garnituren. \\
+DIN EN ISO 898-1 & Produktkennwerte für Schrauben aus Kohlenstoffstahl/legiertem Stahl. \\
+DIN EN ISO 3506-1/-2 & Produktkennwerte für nichtrostende Schrauben/Muttern; keine HV-Bemessungsnorm. \\
+VDI 2230 & Ergänzende Gewindenachweise, insbesondere Gewindeausreißen/Einschraubtiefe. \\
+LBV Brandenburg Tipp 18/06 & Nicht normativer Hinweis zu Grenzzugkräften kleiner Schrauben M6/M8/M10; nur für Vorbemessung bzw. Risikohinweis, nicht als EC3-Ersatznachweis. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{warnbox}
+Wenn ein Projekt explizit DIN EN 1993-1-8:2025 mit zugehörigem Nationalem Anhang ansetzt, ändern sich Struktur, Abschnittsnummern und teilweise Bezeichnungen gegenüber EC3-1-8:2010. Dieses Formelsammlung verwendet die Logik und Nummerierung der Fassung 2010. Bei 2025-Basis sind Gleichungen, Verweise und Teilsicherheitsbeiwerte projektbezogen zu mappen und in der Statik eindeutig anzugeben.
+\end{warnbox}
+
+\subsection{Geltungsbereich nach Durchmesser und Werkstoff}
+\begin{table}[H]
+\centering
+\caption{Arbeitsbereich für Schraubendurchmesser}
+\begin{tabularx}{\textwidth}{@{}p{28mm}YY@{}}
+\toprule
+\textbf{Durchmesser} & \textbf{Stahl, Deutschland} & \textbf{Aluminium, Deutschland} \\
+\midrule
+M5/M6 & Kein allgemeiner Stahlbau-Standardfall. Nur dünnwandige Bauteile, Systemnachweis, Zulassung/ETA oder projektspezifischer Nachweis. & Möglich für Stahlschrauben ab $d\geq\SI{5}{mm}$, falls EC9/NA-DE, EN 1090-3 und Galvanik abgedeckt sind. \\
+M8/M10 & Sonderfall, nicht vorgespannt, Kat. A/D. Bemessung nach EC3/NA-DE; Ausführung/Anziehen nach EN 1090-2 und ggf. DASt-024:2024 als Anzugsregel. & Möglich nach EC9/NA-DE; Aluminiumschrauben ab $d\geq\SI{8}{mm}$. \\
+M12--M36 & In der Regel anzuwendender EC3/NA-DE-Fall, EN 1090-2, EN 14399 oder EN 15048. & In der Regel anzuwendender EC9/NA-DE-Fall, sofern Verbindungstyp, Werkstoff und Ausführung abgedeckt sind. \\
+M8/M10 vorgespannt/gleitfest & Kein Ansatz als Kat. B/C/E ohne Zulassung, Herstellerangaben, Verfahrensprüfung oder explizite normative Grundlage. & Nur wenn EC9 den Fall abdeckt; bei gleitfesten Verbindungen gilt zusätzlich $f_{0,2}>\SI{200}{N/mm^2}$. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+node distance=6mm,
+head/.style={rectangle, rounded corners=1mm, draw=primaryblue, fill=primaryblue!8, thick, align=center, minimum width=42mm, minimum height=8mm},
+box/.style={rectangle, rounded corners=1mm, draw=primaryblue, fill=neutralgray, thick, align=left, text width=48mm, inner sep=1.5mm},
+warn/.style={rectangle, rounded corners=1mm, draw=red!70!black, fill=warnred, thick, align=left, text width=48mm, inner sep=1.5mm},
+arr/.style={-Latex, thick, primaryblue}
+]
+% --- Stahl links, Alu rechts ---
+\node[head] (start) {Verbindung definieren};
+\node[head, below=of start] (mat) {Werkstoff und Durchmesser festlegen};
+\node[head, below left=9mm and 30mm of mat] (stahl) {Stahl};
+\node[head, below right=9mm and 30mm of mat] (alu) {Aluminium};
+% Stahl-Ast: drei Knoten senkrecht
+\node[box, below=of stahl] (s1) {M12--M36: Regelfall EC3/NA-DE};
+\node[box, below=of s1] (s2) {M8/M10: Sonderfall nicht vorgespannt, Kat.\,A/D; EN 1090-2 + ggf. DASt-024};
+\node[warn, below=of s2] (s3) {M5/M6: kein allgemeiner Standardfall -- nur Sonder\-nachweis/System/Zulassung};
+% Alu-Ast: zwei Typen nebeneinander, dann gleitfest darunter
+\node[box, text width=36mm, below left=9mm and 4mm of alu] (a1) {Stahlschr.:\\ $d\geq\SI{5}{mm}$,\\ EC9/NA-DE\\ + EN\,1090-3};
+\node[box, text width=36mm, below right=9mm and 4mm of alu] (a2) {Alu-Schr.:\\ $d\geq\SI{8}{mm}$,\\ Produkt-/Werk\-stoffwerte};
+\node[warn, text width=52mm, below=10mm of $(a1)!0.5!(a2)$] (a3) {Gleitfest: nur wenn EC9 \S8.5.9 abgedeckt und $f_{0,2}>\SI{200}{N/mm^2}$};
+% Sammelknoten unten
+\node[head, below=14mm of $(s3)!0.5!(a3)$, minimum width=135mm] (path) {Nachweispfad: Kat.\,A/D -- Kat.\,B/C/E -- Innengewinde -- Alu-Sonderregeln};
+\draw[arr] (start) -- (mat);
+\draw[arr] (mat) -- (stahl);
+\draw[arr] (mat) -- (alu);
+\draw[arr] (stahl) -- (s1);
+\draw[arr] (s1) -- (s2);
+\draw[arr] (s2) -- (s3);
+\draw[arr] (alu) -- (a1);
+\draw[arr] (alu) -- (a2);
+\draw[arr] (a1) -- (a3);
+\draw[arr] (a2) -- (a3);
+\draw[arr] (s3) -- (path);
+\draw[arr] (a3) -- (path);
+\end{tikzpicture}%
+}
+\caption{Entscheidungsbaum für Durchmesser, Werkstoff und Nachweispfad.}
+\end{figure}
+
+\section{Begriffe, Symbole und Geometrie}
+
+
+\subsection{Symbolverzeichnis}
+\begin{longtable}{@{}p{25mm}p{24mm}p{82mm}p{24mm}@{}}
+\caption{Glossar der im Formelsammlung verwendeten Variablen und Beiwerte}\\
+\toprule
+\textbf{Symbol} & \textbf{Einheit} & \textbf{Bedeutung / Definition} & \textbf{Verwendung} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Symbol} & \textbf{Einheit} & \textbf{Bedeutung / Definition} & \textbf{Verwendung} \\
+\midrule
+\endhead
+$A$ & mm$^2$ & Maßgebende Querschnittsfläche der Schraube im Schernachweis. Bei Scherfuge im glatten Schaft Schaftfläche, bei Gewinde in der Scherfuge in der Regel Spannungsquerschnitt $A_s$. & Abscheren \\
+$A_s$ & mm$^2$ & Spannungsquerschnitt der Schraube nach Produktnorm. & Zug, Vorspannung \\
+$A_{net}$ & mm$^2$ & Nettoquerschnitt des angeschlossenen Bauteils nach Abzug der Löcher im betrachteten Zugpfad. & Nettozug \\
+$A_{nt}$ & mm$^2$ & Nettozugfläche des Blockversagenspfads. & Blockversagen \\
+$A_{nv}$ & mm$^2$ & Nettoschubfläche des Blockversagenspfads. & Blockversagen \\
+$B_{p,Rd}$ & N oder kN & Bemessungswert des Durchstanzwiderstands unter Kopf, Mutter oder Scheibe. & Durchstanzen \\
+$d$ & mm & Nenndurchmesser der Schraube. & Geometrie, Tragfähigkeit \\
+$d_0$ & mm & Lochdurchmesser bzw. maßgebender Durchmesser des Schraubenlochs. & Randabstände, Lochleibung \\
+$\Delta d$ & mm & Lochspiel, üblich als $\Delta d=d_0-d$. & kleine Schrauben, Toleranz \\
+$d_m$ & mm & Mittlerer Durchmesser der Aufstands- bzw. Durchstanzlinie unter Kopf, Mutter oder Scheibe. & Durchstanzen \\
+$e_1$ & mm & Endabstand in Kraftrichtung, gemessen von Lochmitte bis Bauteilende. & Lochleibung, Mindestabstand \\
+$e_2$ & mm & Randabstand quer zur Kraftrichtung, gemessen von Lochmitte bis Bauteilrand. & Lochleibung, Mindestabstand \\
+$F_{v,Ed}$ & N oder kN & Bemessungswert der einwirkenden Scherkraft je Schraube bzw. je nach dokumentierter Lastaufteilung. & Abscheren, Gleiten \\
+$F_{v,Rd}$ & N oder kN & Bemessungswert des Scherwiderstands der Schraube. & Abscheren \\
+$F_{b,Ed}$ & N oder kN & Bemessungswert der einwirkenden Lochleibungskraft im angeschlossenen Bauteil. & Lochleibung \\
+$F_{b,Rd}$ & N oder kN & Bemessungswert des Lochleibungswiderstands. & Lochleibung \\
+$F_{t,Ed}$ & N oder kN & Bemessungswert der einwirkenden Zugkraft in der Schraube. & Zug, Interaktion \\
+$F_{t,Rd}$ & N oder kN & Bemessungswert des Zugwiderstands der Schraube. & Zug \\
+$F_p$ & N oder kN & Für den Gleitnachweis angesetzte Vorspannkraft; je nach Verfahren $F_{p,C}$ oder $F_{p,C}^{*}$. & Gleiten \\
+$F_{p,C}$ & N oder kN & Nennvorspannkraft nach EN 1993/EN 1090/DASt-Systematik, hier $0{,}7 f_{ub}A_s$. & Vorspannung \\
+$F_{p,C}^{*}$ & N oder kN & Reduzierte Vorspannkraft für das modifizierte Drehmomentverfahren, hier $0{,}7 f_{yb}A_s$. & Vorspannung \\
+$F_{s,Rd,1}$ & N oder kN & Bemessungswert des Gleitwiderstands einer Schraube. & Gleiten \\
+$F_{s,Rd}$ & N oder kN & Bemessungswert des Gleitwiderstands der Schraubengruppe; im Formelsammlung $F_{s,Rd}=n_b F_{s,Rd,1}$. & Gleiten \\
+$F_v$, $F_t$ & N oder kN & Allgemeine Scher- bzw. Zugkraft, wenn keine Unterscheidung zwischen Einwirkung und Widerstand nötig ist. & Interaktion \\
+$f_y$ & N/mm$^2$ & Streckgrenze des angeschlossenen Stahlbauteils. & Blockversagen, Grundwerkstoff \\
+$f_u$ & N/mm$^2$ & Zugfestigkeit des angeschlossenen Bauteils bzw. Grundwerkstoffs. & Lochleibung, Nettozug, Durchstanzen \\
+$f_{yb}$ & N/mm$^2$ & Streckgrenze des Schraubenwerkstoffs nach Produktnorm. & Vorspannung \\
+$f_{ub}$ & N/mm$^2$ & Zugfestigkeit des Schraubenwerkstoffs nach Produktnorm. & Abscheren, Zug, Vorspannung \\
+$f_{0,2}$ & N/mm$^2$ & 0,2\,\%-Dehngrenze des Aluminiumwerkstoffs. & EC9, Aluminium \\
+$\rho_{haz}$ & -- & Abminderungsbeiwert für die wärmebeeinflusste Zone (HAZ) nach EC9; werkstoff-, zustands- und schweißnahtspezifisch projektbezogen festzulegen. & EC9, Aluminium \\
+$\eta_{t,LBV}$ & -- & Nicht normativer Reduktionsfaktor für Grenzzugkräfte kleiner Schrauben nach LBV-Hinweis; nur als Vorbemessungsabschätzung, nicht als EC3-Ersatznachweis. & M6/M8/M10 in Zug \\
+$k_1$ & -- & Lochleibungsbeiwert quer zur Kraftrichtung; abhängig von $e_2$ bzw. $p_2$ und $d_0$. & Lochleibung \\
+$k_2$ & -- & Beiwert im Zugwiderstand der Schraube, abhängig von Kopf-/Schraubenform. & Zug \\
+$k_s$ & -- & Reduktionsbeiwert für den Gleitwiderstand infolge Lochtyp und Lastrichtung. & Gleiten \\
+$l_{eff}$ & mm & Wirksame Einschraubtiefe bzw. wirksame Gewindelänge im Grundteil. & Innengewinde \\
+$M_{r,1}$ & Nmm oder Nm & Voranzugmoment für das kombinierte Verfahren; Einheiten konsistent dokumentieren. & Montage \\
+$n_b$ & -- & Anzahl der wirksamen Schrauben in der betrachteten Schraubengruppe. & Gruppenwiderstand \\
+$n_r$ & -- & Anzahl der Reibflächen je Schraube im Gleitnachweis; nicht die Anzahl der Schrauben. & Gleiten \\
+$N_{net,Rd}$ & N oder kN & Bemessungswert des Nettozugwiderstands. & Nettoquerschnitt \\
+$p_1$ & mm & Lochabstand parallel zur Kraftrichtung, gemessen zwischen Lochmitten. & Lochleibung, Mindestabstand \\
+$p_2$ & mm & Lochabstand quer zur Kraftrichtung, gemessen zwischen Lochmitten. & Lochleibung, Mindestabstand \\
+$t$ & mm & Blechdicke bzw. Dicke des betrachteten angeschlossenen Bauteils. & Geometrie, Lochleibung \\
+$t_i$ & mm & Einzelne Blechdicken im Klemmpaket. & Dokumentation \\
+$t_p$ & mm & Dicke des Blechs oder Bauteils im Durchstanznachweis. & Durchstanzen \\
+$\Sigma t$ & mm & Gesamtdicke des Klemmpakets, inklusive erforderlicher Scheiben, soweit für die Garnitur maßgebend. & Klemmlänge \\
+$\Sigma t_{min}$ & mm & Unterer Orientierungswert für die Klemmlänge einer Garnitur; kein Nachweis für Einzelblechdicke. & Klemmlänge \\
+$V_{eff,1,Rd}$ & N oder kN & Bemessungswert des Blockversagenswiderstands für den symmetrischen bzw. Standardpfad nach EC3-Notation. & Blockversagen \\
+$V_{eff,2,Rd}$ & N oder kN & Bemessungswert des Blockversagenswiderstands mit reduziertem Zuganteil für unsymmetrische Fälle. & Blockversagen \\
+$\alpha_b$ & -- & Lochleibungsbeiwert in Kraftrichtung; für End- und Innenschrauben getrennt festzulegen. & Lochleibung \\
+$\alpha_v$ & -- & Scherbeiwert der Schraube, abhängig von Festigkeitsklasse und Lage der Scherfuge. & Abscheren \\
+$\gamma_{M0}$ & -- & Teilsicherheitsbeiwert für Querschnittswiderstände; im EC3/NA-DE-Regelfall dieser Formelsammlung mit $\gamma_{M0}=1{,}00$ angesetzt, sofern die Projektbasis nichts anderes fordert. & Blockversagen \\
+$\gamma_{M2}$ & -- & Teilsicherheitsbeiwert für Schrauben-, Lochleibungs-, Zug- und Nettoquerschnittswiderstände; im EC3/NA-DE-Regelfall dieser Formelsammlung $\gamma_{M2}=1{,}25$. & EC3/EC9 \\
+$\gamma_{M3}$ & -- & Teilsicherheitsbeiwert für Gleitwiderstand im GZT bzw. allgemein ohne SLS-Index; im EC3/NA-DE-Regelfall dieser Formelsammlung $\gamma_{M3}=1{,}25$. & Gleiten \\
+$\gamma_{M3,ser}$ & -- & Teilsicherheitsbeiwert für Gleitwiderstand im GZG; im EC3/NA-DE-Regelfall dieser Formelsammlung $\gamma_{M3,ser}=1{,}10$. & Kat. B \\
+$\mu$ & -- & Reibbeiwert der Kontaktflächen, nur mit dokumentierter Oberfläche bzw. Versuch/Zertifikat ansetzbar. & Gleiten \\
+$\eta$ & -- & Ausnutzung, allgemein Einwirkung geteilt durch Widerstand. & Ergebnis \\
+$\eta_v$, $\eta_b$, $\eta_t$, $\eta_p$, $\eta_s$ & -- & Ausnutzungen für Abscheren, Lochleibung, Zug, Durchstanzen und Gleiten. & Nachweistabelle \\
+$\pi$ & -- & Kreiszahl in der Durchstanzformel. & Durchstanzen \\
+\bottomrule
+\end{longtable}
+
+\begin{hinweisbox}
+Bei jedem projektbezogenen Nachweis ist zusätzlich festzuhalten, ob die angegebenen Kräfte je Schraube, je Scherfuge, je Reibfläche oder für die gesamte Schraubengruppe gelten. Diese Zuordnung ist für die Nachvollziehbarkeit entscheidend und muss dokumentiert sein.
+\end{hinweisbox}
+
+\subsection{Kategorien nach EC3/EC9}
+\begin{table}[H]
+\centering
+\caption{Verbindungskategorien}
+\begin{tabularx}{\textwidth}{@{}p{16mm}p{34mm}Yp{28mm}@{}}
+\toprule
+\textbf{Kat.} & \textbf{Beanspruchung} & \textbf{Bedeutung} & \textbf{Faktor} \\
+\midrule
+A & Abscheren & Nicht vorgespannte Scher-/Lochleibungsverbindung, Nachweis im GZT. & $\gamMtwo=1{,}25$ \\
+B & Gleiten & Gleitfeste Verbindung, kein Gleiten im GZG. & $\gamma_{M3,ser}=1{,}10$ \\
+C & Gleiten & Gleitfeste Verbindung, kein Gleiten im GZT; zusätzlich Nettoquerschnitt. & $\gamMthree=1{,}25$ \\
+D & Zug & Nicht vorgespannte Zugverbindung im GZT. & $\gamMtwo=1{,}25$ \\
+E & Zug & Vorgespannte Zugverbindung mit kontrolliertem Anziehen. & $\gamMtwo=1{,}25$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{normbox}
+Für den EC3/NA-DE-Regelfall dieser Formelsammlung werden die Teilsicherheitsbeiwerte explizit angesetzt als
+\[
+\gamma_{M0}=1{,}00,\qquad \gamma_{M2}=1{,}25,\qquad \gamma_{M3,ser}=1{,}10,\qquad \gamma_{M3}=1{,}25.
+\]
+Bei abweichender Projektbasis, neuer Normenfassung oder Produktzulassung sind diese Werte in der Statik gesondert zu bestätigen.
+\end{normbox}
+
+\subsection{Geometrische Definitionen}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.84, every node/.style={font=\small}]
+% plate
+\fill[neutralgray] (0,0) rectangle (10,5);
+\draw[thick] (0,0) rectangle (10,5);
+% holes 2x3
+\foreach \x in {2.2,5.2,8.2}{
+  \foreach \y in {1.5,3.5}{
+    \draw[fill=white, thick] (\x,\y) circle (0.22);
+  }
+}
+% force direction
+\draw[-Latex, very thick, red!70!black] (10.2,2.5) -- (11.7,2.5) node[right]{Kraftrichtung};
+% e1 bottom? end along force from right edge to row x=8.2
+\draw[<->, thick] (8.2,4.65) -- (10,4.65) node[midway, above] {$e_1$};
+\draw[dashed] (8.2,3.5) -- (8.2,4.85);
+\draw[dashed] (10,5) -- (10,4.85);
+% p1 between columns
+\draw[<->, thick] (5.2,4.15) -- (8.2,4.15) node[midway, above] {$p_1$};
+% e2 perpendicular from bottom to hole
+\draw[<->, thick] (1.2,0) -- (1.2,1.5) node[midway, left] {$e_2$};
+\draw[dashed] (0,1.5) -- (1.45,1.5);
+% p2 between rows
+\draw[<->, thick] (1.7,1.5) -- (1.7,3.5) node[midway, left] {$p_2$};
+\end{tikzpicture}
+\caption{Definition von Rand- und Lochabständen. $d$ = Schraubendurchmesser, $d_0$ = Lochdurchmesser, $t$ = Blechdicke. Kraft\-richtung $\rightarrow$.}
+\end{figure}
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.80, every node/.style={font=\small}]
+% Zweischnittige Verbindung: drei Bleche ohne Spalt. Mittleres Blech trägt F_v, obere/untere Lasche je F_v/2.
+\fill[neutralgray] (0,0.00) rectangle (8.0,0.62);
+\fill[gray!12] (-0.35,0.62) rectangle (8.35,1.42);
+\fill[neutralgray] (0,1.42) rectangle (8.0,2.04);
+\draw[thick] (0,0.00) rectangle (8.0,0.62);
+\draw[thick] (-0.35,0.62) rectangle (8.35,1.42);
+\draw[thick] (0,1.42) rectangle (8.0,2.04);
+% Kontakt-/Scherfugen an den realen Kontaktflächen
+\draw[dashed, very thick, red!70!black] (0.05,0.62) -- (7.95,0.62);
+\draw[dashed, very thick, red!70!black] (0.05,1.42) -- (7.95,1.42);
+\node[red!70!black, anchor=east] at (-0.15,0.62) {Scherfuge};
+\node[red!70!black, anchor=east] at (-0.15,1.42) {Scherfuge};
+% Schraube, Scheiben, Kopf und Mutter ohne scheinbare Spalte.
+% Scheiben werden bewusst breiter als Kopf/Mutter gezeichnet; Kopf/Mutter mit Hex-Facetten.
+\drawShaft{4.00}{-0.55}{2.59}{0.50}
+\drawWasher{4.00}{2.04}{2.25}{0.20}
+\drawWasher{4.00}{-0.20}{2.25}{0.20}
+\drawHexFastener{4.00}{2.24}{1.75}{0.42}
+\drawHexFastener{4.00}{-0.62}{1.75}{0.42}
+% Außenkräfte: keine gegenläufigen Pfeile im selben Blech
+\draw[-Latex, very thick, red!70!black] (8.35,1.02) -- (9.35,1.02) node[midway, above] {$F_{v,Ed}$};
+\draw[-Latex, very thick, red!70!black] (-0.05,1.73) -- (-1.25,1.73) node[midway, above] {$F_{v,Ed}/2$};
+\draw[-Latex, very thick, red!70!black] (-0.05,0.31) -- (-1.25,0.31) node[midway, below] {$F_{v,Ed}/2$};
+% Klemmpaket als Maßlinie außerhalb der Geometrie, nicht als irreführender Spalt
+\draw[<->, thick] (9.85,-0.20) -- (9.85,2.24) node[midway,right=5pt] {$\Sigma t$ Klemmpaket};
+\end{tikzpicture}
+\caption{Schnittdarstellung einer zweischnittigen Durchsteckverbindung ohne dargestellten Spalt zwischen den Blechen. Kopf/Mutter sind als technische Seitenansicht eines Sechskants mit rechteckigem Mittelteil, kleinen Fasen und Facettenlinien dargestellt; die Scheiben sind breiter als Kopf/Mutter gezeichnet. Die mittlere Lasche trägt hier $F_{v,Ed}$, die beiden Außenlaschen je $F_{v,Ed}/2$; die roten Linien markieren die beiden Scherfugen. Blechdicke~$t$ wird nicht aus~$d$ tabelliert, sondern nachgewiesen.}
+\end{figure}
+
+
+\section{Schraubenwerkstoffe und Produktklassen}
+
+\subsection{Stahlschrauben}
+Die Festigkeitsklasse der Schraube bestimmt unmittelbar die Bemessungswerte für Abscheren, Zug und Vorspannkraft. Entscheidend ist dabei nicht nur der Zahlenwert von $f_{ub}$, sondern auch das Verhältnis $f_{yb}/f_{ub}$, das die Duktilität und Umlagerungsfähigkeit der Verbindung beeinflusst.
+
+\begin{table}[H]
+\centering
+\caption{Typische Eigenschaftsklassen nach Produktnorm}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Klasse} & $f_{yb}$ [MPa] & $f_{ub}$ [MPa] & \textbf{Typischer Einsatz} \\
+\midrule
+4.6 & 240 & 400 & Kat. A/D, allgemeiner Stahlbau \\
+5.6 & 300 & 500 & Selten \\
+8.8 & 640 & 800 & HV/HR möglich; auch Kat. A/D \\
+10.9 & 900 & 1000 & HV FK 10.9, hochfeste Garnituren \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Nichtrostende Schrauben}
+Nichtrostende Schraubenklassen wie A2-70, A4-70 oder A4-80 liefern Produktkennwerte, aber keine automatische Gleichstellung mit HV-Garnituren. Ein planmäßiges Vorspannen nichtrostender Schrauben ist nur mit Verfahrensprüfung und projektspezifischer Freigabe anzusetzen. A4 wird bei direktem Aluminiumkontakt häufig bevorzugt, die galvanische Verträglichkeit ist dennoch nachzuweisen und konstruktiv abzusichern.
+
+\subsection{Aluminiumschrauben}
+Aluminiumschrauben sind nur für Aluminiumtragwerke und in der Regel für Kat. A/D anzusetzen. Sie müssen mindestens den Anforderungen nach EC9-1-1 an Verbindungsmittel entsprechen, insbesondere hinsichtlich Legierung und Produktkennwerten.
+
+\section{Nicht vorgespannte Durchsteckverbindungen, Kat. A/D}
+
+\begin{hinweisbox}
+Die im Folgenden verwendeten Bemessungsformeln folgen der Logik und Notation von DIN EN 1993-1-8:2010-12, Abschnitt~3. Bei Anwendung von DIN EN 1993-1-8:2025 ist die Zuordnung der Gleichungen projektbezogen zu prüfen.
+\end{hinweisbox}
+
+\subsection{Eingabedaten}
+\begin{mindestbox}
+Für jede Verbindung sind mindestens zu dokumentieren: Schraubendurchmesser $d$, Lochdurchmesser $d_0$, Gewindelage in der Scherfuge, Anzahl Scherfugen, Blechdicken $t_i$, Werkstoffe $f_y$, $f_u$, Schraubenklasse $f_{yb}$, $f_{ub}$, Rand- und Lochabstände $e_1,e_2,p_1,p_2$, Kopfform, Lochart, Kraftrichtung und Lastkombination.
+\end{mindestbox}
+
+\subsection{Abscheren der Schraube}
+\begin{equation}
+F_{v,Rd}=\frac{\alpha_v\, f_{ub}\, A}{\gamma_{M2}}
+\end{equation}
+
+\begin{hinweisbox}
+Die Fläche $A$ ist eindeutig festzulegen: liegt die Scherfuge im glatten Schaft, ist die Schaftfläche maßgebend; liegt Gewinde in der Scherfuge, ist in der Regel $A_s$ anzusetzen. Die Gewindelage in jeder Scherfuge ist deshalb kein Detail, sondern eine Eingabe für den Nachweis.
+\end{hinweisbox}
+
+Der reduzierte Beiwert $\alpha_v=0{,}5$ für Klasse 10.9 mit Gewinde in der Scherfuge bildet die geringere Duktilität und Umlagerungsfähigkeit im Gewindebereich ab. Eine höhere Zugfestigkeit der Schraube ersetzt daher nicht die korrekte Festlegung der Scherfläche.
+
+
+\begin{table}[H]
+\centering
+\caption{Beiwert $\alpha_v$ für Stahlschrauben}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Scherfläche} & \textbf{Klassen} & $\alpha_v$ \\
+\midrule
+Schaft, glatter Teil & alle & 0,6 \\
+Gewinde & 4.6, 5.6, 8.8 & 0,6 \\
+Gewinde & 4.8, 5.8, 6.8, 10.9 & 0,5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Für EC9 gelten zusätzlich die Sonderwerte für nichtrostende und Aluminiumschrauben: bei Gewinde in der Scherfuge $\alpha_v=0{,}5$, bei glattem Schaft $\alpha_v=0{,}6$.
+
+\subsection{Lochleibung des Anschlussblechs}
+\begin{equation}
+F_{b,Rd}=\frac{k_1\,\alpha_b\, f_u\, d\, t}{\gamma_{M2}}
+\end{equation}
+
+Der Beiwert $\alpha_b$ begrenzt den Lochleibungswiderstand in Kraftrichtung durch die Lage der Schraube (End- oder Innenschraube) und durch das Verhältnis $f_{ub}/f_u$. Der Beiwert $k_1$ wirkt quer zur Kraftrichtung; kleine Randabstände $e_2$ oder Lochabstände $p_2$ können seitliches Ausreißen auslösen, bevor der volle Lochleibungswiderstand erreicht wird.
+
+\begin{equation}
+\alpha_b=\begin{cases}
+\min\left(\dfrac{e_1}{3d_0},\,\dfrac{f_{ub}}{f_u},\,1{,}0\right) & \text{Endschraube in Kraftrichtung},\\[2mm]
+\min\left(\dfrac{p_1}{3d_0}-\dfrac14,\,\dfrac{f_{ub}}{f_u},\,1{,}0\right) & \text{Innenschraube in Kraftrichtung}.
+\end{cases}
+\end{equation}
+\begin{equation}
+k_1=\begin{cases}
+\min\left(2{,}8\frac{e_2}{d_0}-1{,}7,\,2{,}5\right) & \text{Randschraube},\\[1mm]
+\min\left(1{,}4\frac{p_2}{d_0}-1{,}7,\,2{,}5\right) & \text{Innenschraube}.
+\end{cases}
+\end{equation}
+
+\begin{hinweisbox}
+Bei M12 und M14 ist der verwendete Lochdurchmesser $d_0$ besonders zu dokumentieren. Ein Lochspiel von \SI{1}{mm} oder \SI{2}{mm} beeinflusst unmittelbar $\alpha_b$, $k_1$, Lochleibung und Gleitwiderstand.
+\end{hinweisbox}
+
+\subsection{Zugtragfähigkeit, Durchstanzen und Interaktion}
+Die Zugtragfähigkeit der Schraube begrenzt das Versagen des Verbindungsmittels selbst. Zusätzlich ist bei Zugbeanspruchung zu prüfen, ob das angeschlossene Blech unter Kopf, Mutter oder Scheibe lokal ausstanzt. Beim Durchstanzversagen wird das Blech unter der Aufstandsfläche kegelförmig herausgestanzt, bevor die Schraube selbst maßgebend wird. Maßgebend ist der mittlere Umfang $\pi d_m$ unter dem Aufstandsring, multipliziert mit der Blechdicke $t_p$ und einer aus der Zugfestigkeit $f_u$ des Grundwerkstoffs abgeleiteten Schubfestigkeit.
+
+\begin{align}
+F_{t,Rd} &= \frac{k_2 f_{ub} A_s}{\gamma_{M2}}, &
+ k_2&=\begin{cases}0{,}9 & \text{Sechskantkopf},\\0{,}63&\text{Senkkopf},\end{cases}\\[1mm]
+B_{p,Rd} &= \frac{0{,}6\pi d_m t_p f_u}{\gamma_{M2}},\\[1mm]
+\frac{F_{v,Ed}}{F_{v,Rd}}+\frac{F_{t,Ed}}{1{,}4F_{t,Rd}}&\leq 1{,}0.
+\end{align}
+
+\begin{hinweisbox}
+Die Interaktionsgleichung gilt für nicht vorgespannte Scher-/Zugverbindungen der Kategorie A/D. Bei planmäßig vorgespannten Zugverbindungen, insbesondere Kat. E, ist die Interaktion gesondert nach der dafür maßgebenden EC3-Regelung und Projektbasis zu führen. Die Interaktionsgleichung ersetzt außerdem keinen gesonderten Nachweis lokaler Blechbiegung. Hebelkräfte (Prying) sind bei zugbeanspruchten Anschlussplatten, Stirnplatten, T-Stummeln oder dünnen Anschlussblechen gesondert zu beurteilen; dieses Formelsammlung liefert dafür bewusst keine vereinfachte Tabellenformel.
+\end{hinweisbox}
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.95, every node/.style={font=\small}]
+\fill[neutralgray] (-2.5,0) rectangle (2.5,0.55);
+\draw[thick] (-2.5,0) rectangle (2.5,0.55);
+\fill[gray!65] (-0.45,0.55) rectangle (0.45,1.2);
+\draw[thick] (-0.45,0.55) rectangle (0.45,1.2);
+\draw[thick] (0,0.28) circle (0.35);
+% dm circle: realistic ratio ~1.5x hole radius (was 0.82, now 0.55)
+\draw[red!70!black, very thick, dashed] (0,0.28) circle (0.55);
+\draw[-Latex, red!70!black, very thick] (0,1.2) -- (0,2.25) node[above] {$F_t$};
+\draw[<->, thick] (-0.55,-0.32) -- (0.55,-0.32) node[midway, below] {$d_m$};
+\draw[decorate,decoration={brace,amplitude=4pt},thick] (2.75,0) -- (2.75,0.55) node[midway,right=5pt] {$t_p$};
+\end{tikzpicture}
+\caption{Prinzip des Durchstanznachweises bei Zugbeanspruchung ($d_m$ = mittlerer Durchmesser Kopf/Mutter/Scheibe).}
+\end{figure}
+
+\subsection{Nettoquerschnitt und Blockversagen}
+\begin{equation}
+N_{net,Rd} = \frac{0{,}9 A_{net} f_u}{\gamma_{M2}}.
+\end{equation}
+
+Blockversagen tritt auf, wenn ein zusammenhängender Materialblock aus dem Anschlussbereich herausgerissen wird -- definiert durch eine Zugfläche $A_{nt}$ quer zur Kraftrichtung und eine Schubfläche $A_{nv}$ parallel dazu. Das Versagen kombiniert beides: Zugbruch an der schmalen Seite und Abscheren an der langen Seite.
+
+\begin{equation}
+V_{eff,1,Rd} = \frac{f_u A_{nt}}{\gamma_{M2}}+\frac{f_y A_{nv}}{\sqrt{3}\,\gamma_{M0}}.
+\end{equation}
+Der konkrete Blockversagenspfad ist am Anschlussbild zu definieren. Für mehrere Schraubenreihen sind die kritischen Netto- und Schubflächen nachvollziehbar zu skizzieren.
+
+\begin{hinweisbox}
+Der Ansatz $0{,}9A_{net}$ ist keine Freigabe für beliebige Lochbilder. Bei mehreren Lochreihen, versetzten Löchern, Langlöchern, schlanken Querschnitten oder kritischen Zugpfaden ist der Nettoquerschnitt projektspezifisch nach der maßgebenden EC3/EC9-Regelung zu ermitteln und zeichnerisch nachvollziehbar zu dokumentieren.
+\end{hinweisbox}
+
+\begin{hinweisbox}
+Für unsymmetrisches Blockversagen, zum Beispiel bei exzentrischer Last oder Winkelprofilen mit einseitiger Schraubenreihe, ist zusätzlich der reduzierte Zuganteil zu prüfen:
+\[
+V_{eff,2,Rd}=\frac{0{,}5 f_u A_{nt}}{\gamma_{M2}}+\frac{f_y A_{nv}}{\sqrt{3}\,\gamma_{M0}}.
+\]
+Der maßgebende Blockpfad ist am Anschlussbild festzulegen.
+\end{hinweisbox}
+
+\subsection{Mindestabstände}
+Die Mindestabstände sichern ausreichend Material für Lochleibung, Randausreißen und Nettoquerschnitt. Die Höchstabstände verhindern lokales Beulen bei druckbeanspruchten Bauteilen und begrenzen Spalte, die Korrosion begünstigen könnten. Die angegebenen Höchstabstände sind daher vor allem als Regel für druckbeanspruchte Bauteile bzw. als konstruktiver Richtwert zu verstehen; bei Zugstäben können größere Abstände zulässig sein, wenn Korrosionsschutz, Montage und die tatsächliche Kraftübertragung projektspezifisch beurteilt werden. Für dünnwandige kaltgeformte Bauteile können abweichende Regeln nach DIN EN 1993-1-3 maßgebend werden.
+
+\begin{table}[H]
+\centering
+\caption{Geometrische Mindest- und Höchstabstände nach EC3-Logik}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Bedeutung} & \textbf{Minimum} & \textbf{Maximum} \\
+\midrule
+$e_1$ & Endabstand parallel zur Last & $1{,}2d_0$ & $4t+\SI{40}{mm}$ \\
+$e_2$ & Randabstand quer zur Last & $1{,}2d_0$ & $4t+\SI{40}{mm}$ \\
+$p_1$ & Lochabstand parallel zur Last & $2{,}2d_0$ & $\min(14t,\SI{200}{mm})$ \\
+$p_2$ & Lochabstand quer zur Last & $2{,}4d_0$ & $\min(14t,\SI{200}{mm})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Vorgespannte HV/HR-Verbindungen, Kat. B/C/E}
+
+Vorgespannte Verbindungen übertragen Scherkraft zunächst über Reibung zwischen den Kontaktflächen, nicht über Lochleibung. Die Vorspannkraft klemmt die Bauteile zusammen; erst nach Überschreiten des Gleitwiderstands wird die Verbindung zur normalen Scher-/Lochleibungsverbindung. Kat. B verhindert Gleiten im GZG, Kat. C im GZT -- der Unterschied ist das Grenzzustandsniveau, nicht das Messprinzip.
+
+\subsection{Garnituren und Vorspannkraft}
+\begin{table}[H]
+\centering
+\caption{Vorgespannte Garnituren}
+\begin{tabularx}{\textwidth}{@{}p{26mm}p{36mm}p{28mm}Y@{}}
+\toprule
+\textbf{System} & \textbf{Produktnorm} & \textbf{Klassen} & \textbf{Durchmesser} \\
+\midrule
+HR & EN 14399-3/-5/-6 & 8.8, 10.9 & M12--M36 \\
+HV & EN 14399-4/-5/-6 & 10.9 & M12--M36 \\
+HRC & EN 14399-10 & 10.9 & M12--M36 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{align}
+F_{p,C}&=0{,}7 f_{ub}A_s,\\
+F_{p,C}^{*}&=0{,}7 f_{yb}A_s \qquad \text{nur beim modifizierten Drehmomentverfahren nach DASt.}
+\end{align}
+
+\begin{table}[H]
+\centering
+\caption{Vorspannkräfte FK 10.9}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Schraube} & $A_s$ [mm$^2$] & $F_{p,C}$ [kN] & $F_{p,C}^{*}$ [kN] \\
+\midrule
+M12 & 84,3 & 59 & 53 \\
+M16 & 157 & 110 & 99 \\
+M20 & 245 & 172 & 154 \\
+M24 & 353 & 247 & 222 \\
+M27 & 459 & 321 & 289 \\
+M30 & 561 & 393 & 353 \\
+M36 & 817 & 572 & 515 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Anzugsverfahren}
+Das Anzugsverfahren bestimmt, mit welcher Methode die Soll-Vorspannkraft sichergestellt wird. Es ist kein bloßes Ausführungsdetail, sondern Teil der Nachweisführung: Nur mit einem anerkannten, dokumentierten Verfahren darf $F_{p,C}$ oder $F_{p,C}^{*}$ als Bemessungsvorspannkraft angesetzt werden.
+
+\begin{table}[H]
+\centering
+\caption{Anzugsverfahren für planmäßiges Vorspannen}
+\begin{tabularx}{\textwidth}{@{}p{38mm}p{18mm}p{28mm}Y@{}}
+\toprule
+\textbf{Verfahren} & \textbf{k-Klasse} & \textbf{Vorspannung} & \textbf{Hinweis} \\
+\midrule
+Kombiniertes Verfahren & K1/K2 & $F_{p,C}$ & Standard in Deutschland, Voranzug + Drehwinkel. \\
+Modifiziertes Drehmomentverfahren & K1 & $F_{p,C}^{*}$ & Deutscher Sonderweg; nicht mit voller $F_{p,C}$ rechnen. \\
+Europ. Drehmomentverfahren & K2 & $F_{p,C}$ & In Deutschland selten; K2 erforderlich. \\
+DTI & K2 & $F_{p,C}$ & Direct Tension Indicator. \\
+HRC & K2 & $F_{p,C}$ & Abscherkopf, EN 14399-10. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.92, every node/.style={font=\small}]
+% Gleitfeste Verbindung: zwei Bleche in direktem Kontakt, keine grafische Spalte.
+\fill[neutralgray] (0,0.00) rectangle (8.0,0.85);
+\fill[neutralgray] (0,0.85) rectangle (8.0,1.70);
+\draw[thick] (0,0.00) rectangle (8.0,0.85);
+\draw[thick] (0,0.85) rectangle (8.0,1.70);
+\draw[very thick, primaryblue] (0.15,0.85) -- (7.85,0.85);
+% Schraube, Scheiben, Kopf und Mutter ohne scheinbare Kopf-/Scheibenspalte.
+% Scheiben breiter als Kopf/Mutter; Hex-Facetten zur eindeutigen Schraubendarstellung.
+\drawShaft{4.00}{-0.55}{2.45}{0.50}
+\drawWasher{4.00}{1.70}{2.25}{0.25}
+\drawWasher{4.00}{-0.25}{2.25}{0.25}
+\drawHexFastener{4.00}{1.95}{1.75}{0.42}
+\drawHexFastener{4.00}{-0.67}{1.75}{0.42}
+% Vorspannkräfte: Pfeile starten außerhalb der Bauteile und wirken nach innen
+\draw[-Latex, very thick, primaryblue] (2.15,3.05) -- (2.15,2.35) node[midway,left] {$F_{p,C}$};
+\draw[-Latex, very thick, primaryblue] (5.85,-1.15) -- (5.85,-0.65) node[midway,right] {$F_{p,C}$};
+% Außenkräfte auf unterschiedlichen Blechen; kein Kräftepaar im selben Blech
+\draw[-Latex, very thick, red!70!black] (8.05,1.28) -- (9.05,1.28) node[midway,above] {$F_{v,Ed}$};
+\draw[-Latex, very thick, red!70!black] (-0.05,0.43) -- (-1.05,0.43) node[midway,below] {$F_{v,Ed}$};
+% Klemmpaket als konsistente Maßlinie außerhalb der Geometrie
+\draw[<->, thick] (9.85,-0.25) -- (9.85,1.95) node[midway,right=5pt] {$\Sigma t$};
+\end{tikzpicture}
+\caption{Vorgespannte Verbindung ohne dargestellten Spalt zwischen den Blechen; Kopf/Mutter als technische Sechskant-Seitenansicht mit breiteren Scheiben ($F_{p,C}$\,=\,Vorspannkraft, $F_{v,Ed}$\,=\,äußere Scherkraft auf die verbundenen Bleche, $\Sigma t$\,=\,Klemmpaket inkl. Scheiben). Die blaue Linie markiert die Reibfläche; der Gleitwiderstand entsteht aus dokumentierter Oberfläche und tatsächlicher Vorspannkraft; nach Gleiten sind Abscheren und Lochleibung getrennt nachzuweisen.}
+\end{figure}
+
+
+\subsection{Gleitwiderstand}
+\begin{equation}
+F_{s,Rd,1}=\frac{k_s n_r \mu}{\gamma_{M3}}F_p,
+\qquad
+F_{s,Rd}=n_b F_{s,Rd,1},
+\qquad F_p=F_{p,C}\;\text{oder}\;F_{p,C}^{*}\;\text{je nach Anzugsverfahren.}
+\end{equation}
+
+Dabei ist der Teilsicherheitsbeiwert gemäß Verbindungskategorie zu wählen: $\gamma_{M3,ser}=1{,}10$ für Kat.\,B im GZG und $\gamma_{M3}=1{,}25$ für Kat.\,C im GZT.
+
+\begin{hinweisbox}
+Im Gleitnachweis bezeichnet $n_r$ die Anzahl der Reibflächen je Schraube. Die Anzahl der Schrauben der betrachteten Gruppe ist separat als $n_b$ zu dokumentieren. Andernfalls entsteht leicht ein Faktorfehler.
+\end{hinweisbox}
+
+\begin{table}[H]
+\centering
+\caption{Gleitfaktoren nach Lochtyp}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Lochtyp} & $k_s$ \\
+\midrule
+Normalrundloch & 1,00 \\
+Übermaßloch oder kurzes Langloch quer zur Last & 0,85 \\
+Kurzes Langloch parallel zur Last & 0,76 \\
+Langes Langloch parallel zur Last & 0,63 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Teilsicherheitsbeiwerte für den Gleitwiderstand}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & \textbf{GZG/SLS -- Kat. B} & \textbf{GZT/ULS -- Kat. C} \\
+\midrule
+$\gamma_{M3,ser}$ bzw. $\gamma_{M3}$ & 1,10 & 1,25 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Reibbeiwerte $\mu$ nach Reibklasse, nur bei dokumentierter Oberfläche}
+\begin{tabular}{@{}llr@{}}
+\toprule
+\textbf{Klasse} & \textbf{Oberfläche} & $\mu$ \\
+\midrule
+A & Gestrahlt Sa\,2\textonehalf & 0,50 \\
+B & Gestrahlt + Zinkprimer oder feuerverzinkt & 0,40 \\
+C & Drahtgebürstet + anorganischer Primer & 0,30 \\
+D & Unbehandelt mit Walzhaut; Oberflächenzustand projektbezogen zu bestätigen & 0,20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{hinweisbox}
+Reibwerte $\mu$ dürfen nur angesetzt werden, wenn die Reibklasse der Kontaktflächen projektbezogen dokumentiert ist. Reibklasse D mit $\mu=0{,}20$ ist in DIN EN 1993-1-8:2010, Tabelle 3.7, enthalten; sie darf jedoch nicht pauschal aus der Bezeichnung »unbehandelt« abgeleitet werden. Die tatsächliche Kontaktflächenbedingung, insbesondere Walzhaut, Sauberkeit sowie Öl- und Fettfreiheit, ist projektbezogen nach EN 1090-2, Hersteller-/Produktangaben oder geeignetem Versuch/Zertifikat zu bestätigen. Ohne dokumentierte Reibklasse ist der Gleitwiderstand nicht ansetzbar; die Verbindung ist dann als nicht gleitfeste Scher-/Lochleibungsverbindung, z.\,B. Kat. A, oder nach gesonderter Projektbasis zu bemessen.
+\end{hinweisbox}
+
+\subsection{Klemmlänge}
+Klemmlänge ist die Gesamtdicke des Klemmpakets inklusive der erforderlichen Scheiben. Der zulässige Bereich hängt von der Nennlänge der Garnitur ab und ist aus der Herstellertabelle zu entnehmen. Orientierungswerte für $\Sigma t_{min}$ sind: M12 ca. \SI{12}{mm}, M16 ca. \SI{20}{mm}, M20 ca. \SI{25}{mm}, M24 ca. \SI{30}{mm}, M27 ca. \SI{35}{mm}, M30 ca. \SI{38}{mm}, M36 ca. \SI{46}{mm}. Diese Werte sind kein Mindestmaß für ein einzelnes Blech.
+
+Das Voranzugmoment für das kombinierte Verfahren ist:
+\[
+M_{r,1}=0{,}125\,d\,F_{p,C}.
+\]
+
+Dabei sind die Einheiten konsistent zu führen: $d$ in mm und $F_{p,C}$ in N ergeben $M_{r,1}$ in Nmm; für Nm ist entsprechend durch $1000$ zu teilen.
+
+\begin{hinweisbox}
+Der Ansatz $0{,}125\,d\,F_{p,C}$ ist eine vereinfachte Darstellung des Voranzugmoments für das kombinierte Verfahren. Maßgebend bleiben das dokumentierte Anzugsverfahren, die k-Klasse bzw. das k-Klassenzertifikat der Garnitur und die jeweils gültige DASt-024-/EN-1090-Systematik.
+\end{hinweisbox}
+
+
+\begin{table}[H]
+\centering
+\caption{Anzugswinkel ab $M_{r,1}$ für das kombinierte Verfahren nach deutscher Baustellenpraxis}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Klemmlänge} & \textbf{Anzugswinkel} \\
+\midrule
+$\Sigma t < 2d$ & \ang{60} \\
+$2d \leq \Sigma t < 6d$ & \ang{90} \\
+$6d \leq \Sigma t \leq 10d$ & \ang{120} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Innengewinde und Sacklochverschraubung}
+
+\subsection{Grundsatz}
+Eine Sacklochverbindung ist nicht identisch mit einer Durchsteckverbindung mit Mutter. Zu unterscheiden sind: (i) Durchsteckverbindung mit Mutter ohne Einschraubtiefe im Grundbauteil, (ii) Schraube in Sackloch/Innengewinde mit wirksamer Einschraubtiefe im Grundteil und (iii) Schraube in durchgehendem Innengewinde. Maßgebend sind jeweils Einschraubtiefe, Gewindeausreißen, Grundwerkstoff, Toleranzlage, Schraubenklasse und Montageverfahren.
+
+Der häufigste Fehler bei Sacklochanschlüssen ist der Ansatz der vollen Grundteildicke als wirksame Einschraubtiefe. Maßgebend ist ausschließlich die Länge des tatsächlich im Eingriff befindlichen Gewindes -- nicht der glatte Schaft, nicht die Fase und nicht ein Übergangsbereich.
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.82, every node/.style={font=\scriptsize}]
+\tikzset{plate/.style={fill=neutralgray,draw=black,thick},
+         bolt/.style={fill=gray!55,draw=black,thick},
+         washer/.style={fill=gray!45,draw=black,thick},
+         threadline/.style={gray!70,thin}}
+
+% Helper dimensions used in all three panels:
+% x = 2.20 is screw axis, shaft width = 0.40, tapped-hole visual width = 0.56.
+
+% ---------------- Panel A: Through bolt with nut ----------------
+\begin{scope}[xshift=0cm]
+\node[font=\bfseries\small] at (2.2,3.75) {(a) Durchsteck + Mutter};
+% two clamped plates, no artificial gap
+\path[plate] (0.10,1.00) rectangle (4.30,1.62);
+\path[plate] (0.10,0.38) rectangle (4.30,1.00);
+% clearance hole indication through both plates
+\draw[black,thick] (2.00,0.38) -- (2.00,1.62);
+\draw[black,thick] (2.40,0.38) -- (2.40,1.62);
+% bolt assembly
+\drawShaft{2.20}{-0.45}{2.16}{0.40}
+\drawWasher{2.20}{1.62}{2.08}{0.17}
+\drawHexFastener{2.20}{1.79}{1.62}{0.42}
+\drawWasher{2.20}{0.21}{2.08}{0.17}
+\drawHexFastener{2.20}{-0.31}{1.62}{0.52}
+% thread engagement is in the nut, not in the clamped plates
+\foreach \y in {-0.24,-0.11,...,0.13}{\draw[threadline] (1.99,\y) -- (2.41,\y+0.08);} 
+\draw[<->,thick] (4.62,0.21) -- (4.62,1.79) node[midway,right=2pt] {$\Sigma t$};
+\node[align=center,text width=4.7cm] at (2.2,-0.95) {Keine Einschraubtiefe im Bauteil; Gewindemitwirkung in der Mutter.};
+\end{scope}
+
+% ---------------- Panel B: Blind tapped hole ----------------
+\begin{scope}[xshift=5.65cm]
+\node[font=\bfseries\small] at (2.2,3.75) {(b) Sackloch / Innengewinde};
+% top connection plate and base part are in contact
+\path[plate] (0.10,1.56) rectangle (4.30,2.14);
+\path[plate] (0.10,0.15) rectangle (4.30,1.56);
+% clearance hole in connection plate
+\draw[black,thick] (2.00,1.56) -- (2.00,2.14);
+\draw[black,thick] (2.40,1.56) -- (2.40,2.14);
+% tapped blind hole in base part: wider than screw core, closed at bottom
+\path[fill=white,draw=black,thick] (1.92,0.42) -- (1.92,1.56) -- (2.48,1.56) -- (2.48,0.42) -- cycle;
+\draw[black,thick] (1.92,0.42) -- (2.48,0.42);
+% screw with head: smooth shank through clamped plate, threaded end only inside the base part
+\path[bolt] (2.00,1.56) rectangle (2.40,3.02);
+\path[bolt] (2.00,0.55) -- (2.40,0.55) -- (2.40,1.56) -- (2.00,1.56) -- cycle;
+% small chamfer at screw tip, so it does not read as Gewindestange
+\draw[black,thick] (2.00,0.55) -- (2.08,0.43) -- (2.32,0.43) -- (2.40,0.55);
+% external screw thread only on engaged part
+\foreach \y in {0.62,0.76,...,1.42}{\draw[threadline] (2.00,\y) -- (2.40,\y+0.08);} 
+% internal-thread hints on the tapped hole walls, not through the connection plate
+\foreach \y in {0.62,0.86,1.10,1.34}{\draw[threadline] (1.92,\y+0.08) -- (2.00,\y); \draw[threadline] (2.40,\y) -- (2.48,\y+0.08);} 
+\drawWasher{2.20}{2.14}{2.08}{0.17}
+\drawHexFastener{2.20}{2.31}{1.62}{0.42}
+\draw[decorate,decoration={brace,mirror,amplitude=4pt},thick] (4.62,0.55) -- (4.62,1.56) node[midway,right=4pt] {$l_{eff}$};
+\node[align=center,text width=4.7cm] at (2.2,-0.95) {Anschlussblech wird geklemmt; $l_{eff}$ nur im Grundteil mit Innengewinde.};
+\end{scope}
+
+% ---------------- Panel C: Through tapped base ----------------
+\begin{scope}[xshift=11.30cm]
+\node[font=\bfseries\small] at (2.2,3.75) {(c) Durchgangsgewinde};
+% top connection plate and threaded base part, no artificial gap
+\path[plate] (0.10,1.56) rectangle (4.30,2.14);
+\path[plate] (0.10,0.15) rectangle (4.30,1.56);
+% clearance hole in connection plate
+\draw[black,thick] (2.00,1.56) -- (2.00,2.14);
+\draw[black,thick] (2.40,1.56) -- (2.40,2.14);
+% through tapped hole in base part
+\path[fill=white,draw=black,thick] (1.92,0.15) rectangle (2.48,1.56);
+% screw: smooth shank above base, threaded end through base, flush/small chamfered exit
+\path[bolt] (2.00,1.56) rectangle (2.40,3.02);
+\path[bolt] (2.00,0.12) rectangle (2.40,1.56);
+\draw[black,thick] (2.00,0.12) -- (2.08,0.03) -- (2.32,0.03) -- (2.40,0.12);
+\foreach \y in {0.24,0.38,...,1.42}{\draw[threadline] (2.00,\y) -- (2.40,\y+0.08);} 
+% internal-thread hints on side walls
+\foreach \y in {0.30,0.54,0.78,1.02,1.26}{\draw[threadline] (1.92,\y+0.08) -- (2.00,\y); \draw[threadline] (2.40,\y) -- (2.48,\y+0.08);} 
+\drawWasher{2.20}{2.14}{2.08}{0.17}
+\drawHexFastener{2.20}{2.31}{1.62}{0.42}
+\draw[decorate,decoration={brace,mirror,amplitude=4pt},thick] (4.62,0.15) -- (4.62,1.56) node[midway,right=4pt] {$l_{eff}$};
+\node[align=center,text width=4.7cm] at (2.2,-0.95) {Wirksame Gewindelänge dokumentieren; nicht blind als volle Plattendicke ansetzen.};
+\end{scope}
+\end{tikzpicture}
+\caption{Abgrenzung der Gewindemitwirkung: (a) Durchsteckverbindung mit Mutter ohne Einschraubtiefe im verbundenen Bauteil; (b) Schraube in Sackloch/Innengewinde mit glattem Schaft durch das Anschlussblech und Gewindemitwirkung nur im Grundteil; (c) durchgehendes Innengewinde im Grundteil. In allen Gewindefällen ist die wirksame Einschraubtiefe $l_{eff}$ nachzuweisen; der glatte Schaft zählt nicht zur Gewindemitwirkung.}
+\end{figure}
+
+\subsection{Orientierungswerte}
+\begin{hinweisbox}
+Die folgenden Werte sind ausschließlich Erfahrungs- und Vorbemessungswerte der Praxis. Sie sind keine codierte Ersatztabelle für EC3/NA-DE, EC9/NA-DE oder VDI 2230. Projektbezogen ist die wirksame Einschraubtiefe durch einen Gewindeausreißnachweis nach maßgebender Normenbasis, Nationalem Anhang, Produktangaben und ggf. VDI 2230 zu bestätigen. Dieses Formelsammlung gibt dafür bewusst keine allgemeine Ersatzgleichung an, weil Werkstoffpaarung, Innengewindegeometrie, Einschraublänge, Gewindetoleranzen und Produktangaben maßgebend sein können.
+\end{hinweisbox}
+
+\begin{table}[H]
+\centering
+\caption{Orientierungswerte für Vorbemessung; ersetzt keinen projektbezogenen Endnachweis}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Grundwerkstoff} & \textbf{Einschraubtiefe, Orientierung} \\
+\midrule
+Stahl $f_y\geq\SI{235}{MPa}$ & $l_{eff}\geq1{,}0d$ \\
+Stahl konservativ & $l_{eff}\geq1{,}5d$ \\
+Aluminium EN AW-6xxx & $l_{eff}\geq2{,}0d$ \\
+Aluminium konservativ & $l_{eff}\geq2{,}5d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Für Stahl ist die Mindesteinschraubtiefe nach EC3-1-8/NA-DE, NCI zu Abschnitt 3.5, nachzuweisen. VDI 2230 ist eine ergänzende Gewindeausreißprüfung, ersetzt aber nicht den NA-DE-Nachweis in einer EC3-Statik.
+
+\section{Aluminiumverbindungen nach EC9/NA-DE}
+
+\subsection{Verbindungsmittel und Werkstoffwerte}
+Zulässige Verbindungsmittel in Aluminiumtragwerken können geschützte Stahlschrauben, nichtrostende Schrauben oder Aluminiumschrauben sein. Galvanische Verträglichkeit, Trennlagen, Oberflächenschutz und Ausführung nach EN 1090-3 sind zu dokumentieren.
+
+Im Unterschied zu Stahl wird bei Aluminium die 0,2\,\%-Dehngrenze $f_{0,2}$ als charakteristische Streckgröße verwendet, nicht $f_y$. Da Aluminium keine ausgeprägte Streckgrenze hat, ist $f_{0,2}$ stärker werkstoff- und ausschreibungsspezifisch; die unten angegebenen Werte sind deshalb stets produktbezogen zu bestätigen.
+
+\begin{table}[H]
+\centering
+\caption{Beispielhafte charakteristische Werte, produktbezogen zu prüfen}
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+\textbf{Legierung} & $f_{0,2}$ [MPa] & $f_u$ [MPa] & \textbf{Typischer Einsatz} \\
+\midrule
+EN AW-6060 T6 & 150 & 190 & Strangpressprofile \\
+EN AW-6082 T6 & 260 & 310 & Tragende Profile \\
+EN AW-5083 H111 & 125 & 270 & Bleche, Böden \\
+EN AW-7020 T6 & 280 & 350 & Hochfest \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sonderregeln}
+Die wärmebeeinflusste Zone (HAZ, heat-affected zone) entsteht beim Schweißen und reduziert die lokale Festigkeit des Aluminiumwerkstoffs. Für geschraubte Verbindungen ist HAZ relevant, wenn der Anschlusspunkt nahe einer Schweißnaht liegt; die Abminderungsbeiwerte sind nach EC9/NA-DE und Werkstoffzustand zu dokumentieren.
+
+\begin{itemize}
+\item EC9-1-1 deckt Stahlschrauben/-bolzen ab $d\geq\SI{5}{mm}$ und Aluminiumschrauben/-bolzen ab $d\geq\SI{8}{mm}$ ab, sofern der konkrete Verbindungstyp in EC9/NA-DE und EN 1090-3 erfasst ist.
+\item Bei Normalrundlöchern ist die Form der Lochleibungsgleichung ähnlich zu EC3, aber EC9-Faktoren und Grenzen sind maßgebend.
+\item Für Übermaßlöcher und Langlöcher sind EC9-spezifische Reduktionen anzusetzen; EC3-Werte für $k_s$ oder Langloch sind nicht automatisch übertragbar.
+\item Gleitfeste Aluminiumverbindungen nach EC9-1-1 Abschnitt 8.5.9 sind nur abgedeckt, wenn die Streckgrenze des verbundenen Werkstoffs $f_{0,2}>\SI{200}{N/mm^2}$ ist.
+\end{itemize}
+
+\begin{warnbox}
+EN AW-6060 T6 mit $f_{0,2}\approx\SI{150}{MPa}$ ist für gleitfeste Verbindungen nach EC9 Abschnitt 8.5.9 nicht abgedeckt. Mögliche Wege sind Kat. A/Bearing, Versuch, Zulassung/ETA oder eine höherfeste Legierung wie EN AW-6082 T6.
+\end{warnbox}
+
+\section{Sonderfall kleine Schrauben unter M12}
+
+\subsection{Stahl M8/M10, nicht vorgespannt}
+M8 und M10 dürfen in dieser Formelsammlung nur als nicht vorgespannte Verbindungen Kat. A/D behandelt werden. Die DASt-Richtlinie 024:2024 wird dabei höchstens als Ausführungs- bzw. Anzugsregel für den Durchmesserbereich M8--M39 herangezogen; sie begründet keine planmäßige Vorspannung und ersetzt keinen Tragfähigkeitsnachweis. Der Nachweis ist nur vollständig nachvollziehbar, wenn alle folgenden Punkte dokumentiert sind:
+\begin{enumerate}
+\item Bemessung nach EC3/NA-DE, sofern der konkrete Fall abgedeckt ist.
+\item Ausführung nach EN 1090-2; Anziehen ohne Ansatz einer planmäßigen Vorspannkraft, ggf. mit ergänzender Anzugsregel nach DASt-024:2024.
+\item Produkt nach EN 15048 oder gleichwertig akzeptierter Projektspezifikation.
+\item Tatsächliche Werte $A_s$, $d$, $d_0$, $f_{ub}$, $f_y$, $f_u$, Lochspiel, Gewindelage und Schaft-/Gewindeanteil.
+\item Kein Ansatz als Kat. B/C/E ohne Zulassung, Herstellerangaben, Verfahrensprüfung oder explizite normative Grundlage.
+\end{enumerate}
+
+\subsection{Kleine Schrauben M6/M8/M10 in Zug}
+Für kleine Schrauben in Zug ist die formale Zugtragfähigkeit nicht undifferenziert zu übernehmen. Der LBV-Hinweis zu Grenzzugkräften kleiner Schrauben M6/M8/M10 hat in dieser Formelsammlung keinen Status als Eurocode-Nachweis. Der Reduktionsfaktor $\eta_{t,LBV}=0{,}5$ nach LBV Brandenburg Tipp 18/06 darf hier ausschließlich als konservative Vorbemessungsabschätzung bzw. Risikohinweis verwendet werden. Bei Nennlochspiel $\Delta d\leq\SI{0,5}{mm}$ kann für diese Vorbemessung $\eta_{t,LBV}=0{,}7$ angesetzt werden, entsprechend Faktor 1,4 auf die reduzierten Grenzzugkräfte.
+
+\begin{warnbox}
+Diese Reduktion betrifft nur die Zugtragfähigkeit/Grenzzugkraft kleiner Schrauben. Sie ist keine EC3-Ersatzformel für Abscheren, Lochleibung oder den gesamten Anschluss. Für einen endgültigen Tragfähigkeitsnachweis sind eine anerkannte Zulassung/ETA, Herstellerangaben mit abgedecktem Anwendungsfall, ein projektbezogener Versuch oder eine explizite Freigabe der Projektbasis erforderlich.
+\end{warnbox}
+
+\subsection{Aluminium unter M12}
+Unter M12 ist Aluminium nicht automatisch ein Sonderfall wie im Stahlbau. Entscheidend sind EC9/NA-DE, der Verbindungstyp und EN 1090-3. Für Stahlschrauben gilt die Untergrenze $d\geq\SI{5}{mm}$, für Aluminiumschrauben $d\geq\SI{8}{mm}$. Galvanik und HAZ-Werte sind separat zu dokumentieren.
+
+\section{Definitiver Bemessungsablauf}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+node distance=8mm,
+box/.style={rectangle, rounded corners=1mm, draw=primaryblue, fill=neutralgray, thick, align=left, text width=0.80\textwidth, inner sep=2.5mm},
+arr/.style={-Latex, thick, primaryblue}
+]
+\node[box] (b1) {1. Normenbasis festlegen: EC3 2010/2025 oder EC9, NA-DE, Ausführungsnorm, Produktnorm, Zulassung/ETA.};
+\node[box, below=of b1] (b2) {2. Verbindung klassifizieren: Stahl/Alu, Durchmesser, Kat. A--E, Durchsteck/Sackloch, normal/gleitfest, Lochart.};
+\node[box, below=of b2] (b3) {3. Geometrie dokumentieren: $d$, $d_0$, $t$, $e_1$, $e_2$, $p_1$, $p_2$, Kraftrichtung, Gewindelage, Scheiben/Kopf/Mutter.};
+\node[box, below=of b3] (b4) {4. Widerstände berechnen: Abscheren, Lochleibung, Zug, Durchstanzen, Interaktion, Nettoquerschnitt, Blockversagen.};
+\node[box, below=of b4] (b5) {5. Bei Vorspannung: Garnitur, k-Klasse, Anzugsverfahren, $F_p$, Klemmlänge, Reibwert $\mu$, $k_s$, Kat. B/C prüfen.};
+\node[box, below=of b5] (b6) {6. Bei Aluminium: EC9-Faktoren, Galvanik, HAZ, $f_{0,2}>200$ für gleitfest, keine automatische EC3-Übertragung.};
+\node[box, below=of b6] (b7) {7. Bei M8/M10: nur Kat. A/D ohne Sonderfreigabe; DASt-024:2024 höchstens Anziehen/Ausführung; LBV nur Vorbemessung.};
+\node[box, below=of b7] (b8) {8. Ergebnis dokumentieren: Ausnutzungen, maßgebender Versagensmodus, Annahmen, Quellen, Einschraubtiefe/Klemmlänge, Oberflächenklasse, offene Randbedingungen.};
+\foreach \a/\b in {b1/b2,b2/b3,b3/b4,b4/b5,b5/b6,b6/b7,b7/b8}{\draw[arr] (\a) -- (\b);} 
+\end{tikzpicture}
+\caption{Bemessungsworkflow für einen nachvollziehbaren Anschlussnachweis.}
+\end{figure}
+
+\subsection{Nachweistabelle für die Statik}
+\begin{longtable}{@{}p{38mm}p{45mm}p{45mm}p{28mm}@{}}
+\caption{Minimaler Ausgabeumfang im Nachweis}\\
+\toprule
+\textbf{Prüfpunkt} & \textbf{Eingabe} & \textbf{Ergebnis} & \textbf{Status} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Prüfpunkt} & \textbf{Eingabe} & \textbf{Ergebnis} & \textbf{Status} \\
+\midrule
+\endhead
+Normenbasis & EC3/EC9, NA-DE, EN 1090, DASt, Produktnorm & Vertragliche Basis eindeutig & OK/offen \\
+Geometrie & $d,d_0,t,e_1,e_2,p_1,p_2$ & Mindestabstände eingehalten & OK/offen \\
+Abscheren & $F_{v,Ed}$, $A$, $\alpha_v$, $f_{ub}$ & $\eta_v=F_{v,Ed}/F_{v,Rd}$ & $\eta\leq1$ \\
+Lochleibung & $f_u,d,t,k_1,\alpha_b$ & $\eta_b=F_{b,Ed}/F_{b,Rd}$ & $\eta\leq1$ \\
+Zug & $F_{t,Ed}$, $A_s$, $k_2$ & $\eta_t=F_{t,Ed}/F_{t,Rd}$ & $\eta\leq1$ \\
+Durchstanzen & $d_m,t_p,f_u$ & $\eta_p=F_{t,Ed}/B_{p,Rd}$ & $\eta\leq1$ \\
+Interaktion & $F_v,F_t$ & $F_v/F_{v,Rd}+F_t/(1{,}4F_{t,Rd})\leq1{,}0$ & $\eta\leq1$ \\
+Netto/Block & $A_{net},A_{nt},A_{nv}$ & $N_{net,Rd}$, $V_{eff,1,Rd}$, ggf. $V_{eff,2,Rd}$ & $\eta\leq1$ \\
+Gleiten & $F_p,\mu,k_s,n_r,n_b,\gamma_{M3}$, dokumentierte Reibklasse & $F_{s,Rd}$ und $\eta_s=F_{v,Ed}/F_{s,Rd}$ & $\eta\leq1$ \\
+Sackloch & $l_{eff}$, Grundwerkstoff, Gewinde & Gewindeausreißen und NA-DE & OK/offen \\
+Aluminium/HAZ & Legierung, Lage zur Schweißnaht, ggf. $\rho_{haz}$, Galvanik & EC9-Grenzen und HAZ-Abminderung eingehalten & OK/offen \\
+M8/M10 & DASt-024:2024, Produkt, Lochspiel & Sonderfall dokumentiert & OK/offen \\
+\bottomrule
+\end{longtable}
+
+\section{Kurzfazit}
+\begin{itemize}
+\item Der Regelfall im Stahlbau bleibt M12--M36 nach EC3/NA-DE.
+\item M8/M10 in Stahl sind kein kleiner Regelfall, sondern ein nicht vorgespannter Sonderfall mit EC3-Bemessung; DASt-024:2024 ist dabei höchstens Anzugs-/Ausführungsregel.
+\item Für Aluminium gelten die Untergrenzen und Sonderregeln aus EC9/NA-DE; unter M12 ist nicht automatisch ausgeschlossen.
+\item Blechdicke wird nicht aus einer Durchmessertabelle entnommen, sondern über Lochleibung, Durchstanzen und weitere Grenzzustände bestimmt.
+\item Produktnormen und ISO-Klassen liefern Kennwerte, aber keine eigenständige Tragfähigkeitsbemessung.
+\end{itemize}
+
+\appendix
+\section{Schnellformeln}
+Die Schnellformeln sind nur mit den Definitionen und Randbedingungen der jeweiligen Hauptabschnitte zu verwenden: Abscheren und Lochleibung in Abschnitt~4, Vorspannung/Gleiten in Abschnitt~5, Innengewinde in Abschnitt~6 und Aluminium in Abschnitt~7. Für den Gleitwiderstand ist $\gamma_{M3,ser}$ bei Kat.\,B/GZG und $\gamma_{M3}$ bei Kat.\,C/GZT einzusetzen.
+\begin{align*}
+F_{v,Rd}&=\frac{\alpha_v f_{ub}A}{\gamma_{M2}}, &
+F_{b,Rd}&=\frac{k_1\alpha_b f_u d t}{\gamma_{M2}},\\
+F_{t,Rd}&=\frac{k_2 f_{ub}A_s}{\gamma_{M2}}, &
+B_{p,Rd}&=\frac{0{,}6\pi d_m t_p f_u}{\gamma_{M2}},\\
+N_{net,Rd}&=\frac{0{,}9A_{net}f_u}{\gamma_{M2}}, &
+V_{eff,1,Rd}&=\frac{f_u A_{nt}}{\gamma_{M2}}+\frac{f_y A_{nv}}{\sqrt{3}\,\gamma_{M0}},\\
+V_{eff,2,Rd}&=\frac{0{,}5 f_u A_{nt}}{\gamma_{M2}}+\frac{f_y A_{nv}}{\sqrt{3}\,\gamma_{M0}}, &
+F_{s,Rd,1}&=\frac{k_s n_r\mu}{\gamma_{M3}}F_p,\\
+F_{s,Rd}&=n_b F_{s,Rd,1}.
+\end{align*}
+
+
+\section{Kompaktes Zahlenbeispiel}
+
+\begin{hinweisbox}
+Dieses Beispiel ist didaktisch und ersetzt keinen projektbezogenen Anschlussnachweis. Nicht geprüft werden hier Blockversagen, Nettoquerschnitt, Durchstanzen, Exzentrizität, lokale Blechbiegung/Hebelkräfte, Gruppenwirkungen und Bauteilstabilität. Zwischenwerte sind auf zwei Dezimalstellen gerundet; beim projektseitigen Nachweis sind ungerundete Werte durchzurechnen.
+\end{hinweisbox}
+
+Angenommen wird eine Schraube M20 FK 10.9 mit $d=\SI{20}{mm}$, $d_0=\SI{22}{mm}$ (Normalrundloch mit \SI{2}{mm} Lochspiel), $A_s=\SI{245}{mm^2}$, $f_{ub}=\SI{1000}{N/mm^2}$ und Scherfuge im Gewinde. Das Anschlussblech sei S235 mit $f_u=\SI{360}{N/mm^2}$, $t=\SI{10}{mm}$, $e_1=\SI{45}{mm}$, $e_2=\SI{40}{mm}$, $p_1=\SI{70}{mm}$ und $p_2=\SI{60}{mm}$. Die Schraube wird für den Lochleibungsnachweis als Endschraube in Kraftrichtung behandelt; $p_1$ wäre für Innenschrauben einer Reihe maßgebend. Als Einwirkung dienen nur zur Demonstration $F_{v,Ed}=\SI{30}{kN}$ und $F_{t,Ed}=\SI{20}{kN}$.
+
+\subsection*{Variante A: nicht vorgespannte Verbindung Kat. A/D}
+Diese Variante betrachtet die Verbindung als nicht vorgespannte Scher-/Zugverbindung. Maßgebend sind hier Abscheren, Lochleibung, Zug und Interaktion; ein Gleitnachweis wird für diese Kategorie nicht angesetzt.
+
+\begin{align*}
+F_{v,Rd} &= \frac{0{,}5\cdot1000\cdot245}{1{,}25}=\SI{98000}{N}\approx\SI{98}{kN},\\
+F_{t,Rd} &= \frac{0{,}9\cdot1000\cdot245}{1{,}25}=\SI{176400}{N}\approx\SI{176}{kN},\\
+\alpha_b &= \min\left(\frac{45}{3\cdot22},\frac{1000}{360},1\right)=0{,}682,\\
+k_1 &= \min\left(2{,}8\frac{40}{22}-1{,}7,2{,}5\right)=2{,}50,\\
+F_{b,Rd} &= \frac{2{,}5\cdot0{,}682\cdot360\cdot20\cdot10}{1{,}25}\approx\SI{98,2}{kN},\\
+\frac{F_{v,Ed}}{F_{v,Rd}}+\frac{F_{t,Ed}}{1{,}4\,F_{t,Rd}}
+&= \frac{30}{98}+\frac{20}{1{,}4\cdot176}=0{,}31+0{,}08=0{,}39\leq1{,}0.
+\end{align*}
+
+\subsection*{Variante B: separater Gleitnachweis Kat. B im GZG}
+Diese Variante ist nicht gleichzeitig mit Variante A als eine einzige Verbindungsdefinition zu lesen. Sie zeigt nur, wie ein Gleitwiderstand zu berechnen wäre, wenn die Verbindung projektspezifisch als gleitfeste Kat.\,B-Verbindung mit dokumentierter Reibklasse ausgeführt wird. Beispielhaft werden $\mu=0{,}30$, $k_s=1{,}0$, $n_r=1$ und $n_b=1$ angesetzt.
+
+\begin{align*}
+F_{p,C} &= 0{,}7\,f_{ub}A_s = 0{,}7\cdot1000\cdot245 = \SI{171500}{N}\approx\SI{172}{kN},\\
+F_{s,Rd} &= \frac{k_s\,n_r\,\mu}{\gamma_{M3,ser}}\,F_{p,C}
+= \frac{1{,}0\cdot1\cdot0{,}30}{1{,}10}\cdot\SI{172}{kN}=\SI{46,9}{kN}\quad\text{(Kat.\,B, GZG)}.
+\end{align*}
+
+Im Beispiel liegen Abscheren und Lochleibung der Kat.-A/D-Variante beide bei etwa \SI{98}{kN}. Der separat gezeigte Gleitwiderstand Kat. B wäre mit ca. \SI{46,9}{kN} deutlich kleiner, ist aber nur relevant, wenn die Verbindung tatsächlich als gleitfest spezifiziert und die Reibklasse dokumentiert ist. Genau deshalb ist eine einfache Durchmessertabelle für die Blechdicke kein ausreichender Endnachweis.
+
+\section{Normative Referenzen im Dokument}
+\begin{itemize}
+\item DIN EN 1993-1-8:2010-12 + NA-DE, Bemessung von Anschlüssen im Stahlbau.
+\item DIN EN 1993-1-3:2010-12, Abschnitt 8, dünnwandige Stahlbauteile.
+\item DIN EN 1999-1-1:2014-03 + NA-DE, Aluminiumtragwerke und Verbindungen.
+\item EN 1090-2:2018 und EN 1090-3:2019, Ausführung Stahl bzw. Aluminium.
+\item DASt-Richtlinie 024:2018/2024, Anziehen geschraubter Verbindungen.
+\item EN 14399, EN 15048, DIN EN ISO 898-1, DIN EN ISO 3506 als Produkt- und Kennwertnormen.
+\item VDI 2230 für Gewindeausreißen als ergänzende Berechnung.
+\item LBV Brandenburg Tipp 18/06 als nicht normativer Vorbemessungshinweis für kleine Schrauben in Zug.
+\end{itemize}
+
+\end{document}
